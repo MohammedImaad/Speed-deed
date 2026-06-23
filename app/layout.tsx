@@ -13,7 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      {/* suppressHydrationWarning: some browser extensions inject attributes
+          (e.g. cz-shortcut-listen) onto <body> before React hydrates. */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }
