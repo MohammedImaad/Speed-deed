@@ -10,7 +10,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "next": "15.1.3",
+    "next": "^15.5.19",
     "openai": "^4.77.0",
     "pdf-to-img": "^4.2.0",
     "react": "19.0.0",
