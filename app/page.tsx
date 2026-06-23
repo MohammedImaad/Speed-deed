@@ -35,14 +35,31 @@ export default function Home() {
       const body = new FormData();
       body.append("file", file);
       const res = await fetch("/api/parse", { method: "POST", body });
-      const json = await res.json();
+
+      // The server may crash/time out and return a non-JSON error page.
+      // Read text first so we can surface the real status instead of a
+      // generic "network error" when JSON parsing would otherwise throw.
+      const text = await res.text();
+      let json: { error?: string; result?: GpaResult; pageCount?: number } = {};
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch {
+        setError(
+          `Server returned an unexpected response (HTTP ${res.status}). ` +
+            (res.status === 504
+              ? "The request timed out — try a smaller file or fewer pages."
+              : "Check the server logs.")
+        );
+        return;
+      }
+
       if (!res.ok) {
-        setError(json.error ?? "Something went wrong.");
+        setError(json.error ?? `Something went wrong (HTTP ${res.status}).`);
       } else {
-        setData(json);
+        setData(json as ApiResponse);
       }
     } catch {
-      setError("Network error — is the dev server running?");
+      setError("Could not reach the server. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
