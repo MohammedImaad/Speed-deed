@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // pdf-to-img uses canvas/native deps; keep them external to the server bundle.
-  serverExternalPackages: ["pdf-to-img"],
+  // mupdf loads a WASM module at runtime; keep it out of the server bundle so
+  // the .wasm resolves correctly (incl. on serverless).
+  serverExternalPackages: ["mupdf"],
 };
 
 export default nextConfig;

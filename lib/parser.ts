@@ -4,6 +4,13 @@ import { ParsedTranscriptSchema, type ParsedTranscript } from "./schema";
 const MODEL = "gpt-4o-mini";
 
 /**
+ * Parser input: one or more page images as data URLs. PDFs are rasterized to
+ * images upstream (see lib/pdf.ts) before reaching the model, because the model
+ * reads high-resolution images far more reliably than a raw PDF.
+ */
+export type ParserInput = { kind: "images"; dataUrls: string[] };
+
+/**
  * JSON schema handed to the model via structured outputs. This guarantees the
  * response shape. Crucially it asks for RAW data only — codes, credits, grades
  * exactly as written. No GPA, no quality points, no "does it count" decision.
@@ -78,23 +85,38 @@ const RESPONSE_FORMAT = {
   },
 };
 
-const SYSTEM_PROMPT = `You are a precise transcript reader. You are given one or more page images of a university transcript.
+const SYSTEM_PROMPT = `You are a precise transcript reader. You are given a university transcript as one or more page images.
 Extract every course with its term, course code, title, credit hours, and grade exactly as printed.
 Rules:
 - Transcribe only. Do NOT compute GPA, quality points, or decide what counts — that is done elsewhere.
-- Keep grades as written (letters like "A-", "B+", or words like "Pass", "Fail", "Withdrawn", "W").
+- Keep grades EXACTLY as written, character for character. Grades very often carry a trailing modifier: a plus ("+") or a minus ("-"), e.g. "A-", "B+", "C-". These modifiers change the grade and are easy to miss — look closely and never drop them. "A" and "A-" are different grades.
+- Words like "Pass", "Fail", "Withdrawn", or "W" are also valid grades — copy them verbatim.
 - Group courses under the term/semester they appear in. If a term continues across pages, merge it into one term entry.
 - If the document is not a transcript or is unreadable, set isTranscript to false and explain briefly in reason.`;
 
 export class ParseError extends Error {}
 
+/** Build the user message content from the page images. */
+function buildUserContent(input: ParserInput) {
+  return [
+    {
+      type: "text" as const,
+      text: "Here is the transcript. Extract the courses and grades.",
+    },
+    ...input.dataUrls.map((url) => ({
+      type: "image_url" as const,
+      image_url: { url, detail: "high" as const },
+    })),
+  ];
+}
+
 /**
- * Read transcript page image(s) with the vision model and return validated raw
- * structured data. Throws ParseError on a missing key, API failure, or output
- * that doesn't match the schema.
+ * Read a transcript (PDF or image) with the vision model and return validated
+ * raw structured data. Throws ParseError on a missing key, API failure, or
+ * output that doesn't match the schema.
  */
 export async function parseTranscript(
-  imageDataUrls: string[]
+  input: ParserInput
 ): Promise<ParsedTranscript> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -113,19 +135,7 @@ export async function parseTranscript(
       response_format: RESPONSE_FORMAT,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "Here are the transcript page(s). Extract the courses and grades.",
-            },
-            ...imageDataUrls.map((url) => ({
-              type: "image_url" as const,
-              image_url: { url, detail: "high" as const },
-            })),
-          ],
-        },
+        { role: "user", content: buildUserContent(input) },
       ],
     });
   } catch (err) {

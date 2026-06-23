@@ -34,9 +34,12 @@ upload ─► [ fuzzy ]  pdf.ts + parser.ts ─► raw JSON ─► [ exact ]  gp
             LLM / vision                    (Zod)        pure functions
 ```
 
-1. **`lib/pdf.ts`** — rasterizes each PDF page to a PNG. Images are used as-is.
-   (Rasterizing rather than extracting embedded text means scanned PDFs with no
-   text layer work the same as digital ones.)
+1. **`lib/pdf.ts`** — rasterizes each PDF page to a high-DPI PNG with **MuPDF**
+   (WASM, no native binaries — runs locally and on serverless). Images are used
+   as-is. (Rasterizing rather than extracting embedded text means scanned PDFs
+   with no text layer work the same as digital ones. High DPI matters: sending a
+   PDF straight to the model loses fine glyphs like the "-" in "A-", which
+   silently corrupts the GPA — see "what I'd improve".)
 2. **`lib/parser.ts`** — sends the page image(s) to OpenAI `gpt-4o-mini` (vision)
    with a strict JSON schema (structured outputs). The model **only transcribes**
    — course code, credits, grade as written. It does no arithmetic and makes no

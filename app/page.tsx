@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import type { GpaResult } from "@/lib/gpa";
 
-type ApiResponse = { result: GpaResult; pageCount: number };
+type ApiResponse = { result: GpaResult };
 
 function fmt(n: number) {
   return n.toLocaleString(undefined, {
@@ -40,7 +40,7 @@ export default function Home() {
       // Read text first so we can surface the real status instead of a
       // generic "network error" when JSON parsing would otherwise throw.
       const text = await res.text();
-      let json: { error?: string; result?: GpaResult; pageCount?: number } = {};
+      let json: { error?: string; result?: GpaResult } = {};
       try {
         json = text ? JSON.parse(text) : {};
       } catch {
@@ -96,7 +96,7 @@ export default function Home() {
           onChange={(e) => pick(e.target.files?.[0] ?? null)}
         />
         <div>📄 Click to choose a file, or drag it here</div>
-        <div className="hint">PDF, PNG, or JPG · up to 15 MB</div>
+        <div className="hint">PDF, PNG, or JPG · up to 4 MB</div>
         {file && <div className="filename">Selected: {file.name}</div>}
       </div>
 
@@ -114,7 +114,6 @@ export default function Home() {
             </span>
             <span className="label">
               cumulative GPA · {result.cumulativeGpaCredits} GPA credits
-              {data && data.pageCount > 1 ? ` · ${data.pageCount} pages` : ""}
             </span>
           </div>
 
