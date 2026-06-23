@@ -4,6 +4,9 @@ Upload a university transcript (PDF or image — scan or phone photo) and get yo
 GPA broken down **per term** and **cumulative**. The document is read by an LLM;
 the GPA math is done separately in plain, tested TypeScript.
 
+**Live demo:** https://speed-deed-topaz.vercel.app/
+(try it with `samples/sample_transcript.pdf`)
+
 ## How to run
 
 Requires Node 18+ and an OpenAI API key.
@@ -97,7 +100,7 @@ cumulative GPA across terms, unknown grades flagged not dropped).
 
 - The "what-if" target-GPA calculator (built the multi-page extra instead).
 - Multi-scale support beyond the spec's scale.
-- Auth, persistence, and a deployment — it runs locally with one env var.
+- Auth and persistence — it's stateless; nothing is stored between uploads.
 - Heavier UI polish; styling is deliberately minimal.
 ```
 
